@@ -1,0 +1,48 @@
+# Used by docker-compose.yml to deploy the formio application
+# (When modified, you must include `--build` )
+# -----------------------------------------------------------
+
+# Use Node image, maintained by Docker:
+# hub.docker.com/r/_/node/
+# FROM node:20-alpine
+FROM public.ecr.aws/lambda/nodejs:20
+
+# Copy source dependencies
+COPY src/ ${LAMBDA_TASK_ROOT}/src/
+COPY config/ ${LAMBDA_TASK_ROOT}/config
+COPY portal/ ${LAMBDA_TASK_ROOT}/portal/
+COPY *.js ${LAMBDA_TASK_ROOT}/
+COPY *.txt ${LAMBDA_TASK_ROOT}/
+COPY package.json ${LAMBDA_TASK_ROOT}/
+COPY default-template.json ${LAMBDA_TASK_ROOT}/
+
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+# "bcrypt" requires python/make/g++, all must be installed in Amazon Linux
+# (note: using pinned versions to ensure immutable build environment)
+RUN microdnf update -y && \
+    microdnf install -y make && \
+    microdnf install -y python3 && \
+    microdnf install -y gcc-c++ && \
+    microdnf install -y git
+
+# Use https to avoid requiring ssh keys for public repos.
+RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+
+# Install yarn using npm
+RUN npm install -g yarn
+
+# install dependencies
+RUN yarn
+# build the client application
+RUN yarn build:portal
+# RUN microdnf remove -y git
+
+# Set this to inspect more from the application. Examples:
+#   DEBUG=formio:db (see index.js for more)
+#   DEBUG=formio:*
+ENV DEBUG=""
+
+# This will initialize the application based on
+# some questions to the user (login email, password, etc.)
+ENTRYPOINT [ "node", "--no-node-snapshot", "main" ]

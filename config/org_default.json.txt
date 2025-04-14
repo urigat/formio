@@ -1,12 +1,12 @@
 {
-  "port": 80,
+  "port": 3001,
   "appPort": 8080,
-  "host": "forms.syntero.run",
+  "host": "localhost:3001",
   "protocol": "http",
   "allowedOrigins": [
     "*"
   ],
-  "domain": "https://forms.syntero.run",
+  "domain": "http://localhost:3001",
   "basePath": "",
   "mongo": "mongodb://localhost:27017/formio-ce",
   "mongoConfig": "",
